@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EcoTrack - Carbon Footprint Assistant</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <!-- FontAwesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar Navigation -->
+        <nav class="sidebar glass-panel">
+            <div class="logo">
+                <i class="fa-solid fa-leaf"></i>
+                <h1>EcoTrack</h1>
+            </div>
+            <ul class="nav-links">
+                <li class="active" data-target="dashboard-section"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
+                <li data-target="calculator-section"><i class="fa-solid fa-calculator"></i> Calculator</li>
+                <li data-target="tracker-section"><i class="fa-solid fa-list-check"></i> Action Tracker</li>
+                <li data-target="assistant-section"><i class="fa-solid fa-robot"></i> AI Assistant</li>
+            </ul>
+        </nav>
+
+        <!-- Main Content Area -->
+        <main class="main-content">
+            
+            <!-- Dashboard Section -->
+            <section id="dashboard-section" class="content-section active glass-panel">
+                <header>
+                    <h2>Welcome to EcoTrack</h2>
+                    <p>Your personalized journey to a greener lifestyle.</p>
+                </header>
+                <div class="dashboard-cards">
+                    <div class="card stat-card">
+                        <h3>Your Carbon Footprint</h3>
+                        <div class="stat-value"><span id="total-footprint">0.0</span> <span class="unit">tons CO₂/yr</span></div>
+                        <p class="stat-desc" id="footprint-status">Take the calculator to see your impact.</p>
+                    </div>
+                    <div class="card stat-card">
+                        <h3>Actions Completed</h3>
+                        <div class="stat-value"><span id="actions-completed">0</span>/<span id="actions-total">0</span></div>
+                        <div class="progress-bar-container">
+                            <div class="progress-bar" id="action-progress"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Calculator Section -->
+            <section id="calculator-section" class="content-section glass-panel" style="display: none;">
+                <header>
+                    <h2>Carbon Calculator</h2>
+                    <p>Tell us about your daily habits to estimate your impact.</p>
+                </header>
+                <form id="calculator-form">
+                    <div class="form-group">
+                        <label for="transport"><i class="fa-solid fa-car"></i> Primary mode of transportation?</label>
+                        <select id="transport" required>
+                            <option value="" disabled selected>Select an option</option>
+                            <option value="car_gas">Gasoline Car (Daily)</option>
+                            <option value="car_ev">Electric Car (Daily)</option>
+                            <option value="public">Public Transit</option>
+                            <option value="bike_walk">Biking / Walking</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="diet"><i class="fa-solid fa-utensils"></i> Typical diet?</label>
+                        <select id="diet" required>
+                            <option value="" disabled selected>Select an option</option>
+                            <option value="meat_heavy">Meat Heavy</option>
+                            <option value="average">Average (Mixed)</option>
+                            <option value="vegetarian">Vegetarian</option>
+                            <option value="vegan">Vegan</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="energy"><i class="fa-solid fa-bolt"></i> Home energy usage?</label>
+                        <select id="energy" required>
+                            <option value="" disabled selected>Select an option</option>
+                            <option value="high">High (Frequent AC/Heating)</option>
+                            <option value="average">Average</option>
+                            <option value="low">Low (Energy efficient)</option>
+                            <option value="renewable">100% Renewable</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn primary-btn">Calculate Footprint</button>
+                </form>
+                <div id="calc-result" class="result-box hidden">
+                    <h3>Estimated Footprint: <span id="result-value"></span> tons CO₂/yr</h3>
+                    <p>The AI Assistant has analyzed your results. Check the Assistant tab for insights!</p>
+                </div>
+            </section>
+
+            <!-- Tracker Section -->
+            <section id="tracker-section" class="content-section glass-panel" style="display: none;">
+                <header>
+                    <h2>Action Tracker</h2>
+                    <p>Small actions lead to big changes. Check off your daily sustainable habits.</p>
+                </header>
+                <div class="tracker-list" id="tracker-list">
+                    <!-- Actions will be injected here by JS -->
+                </div>
+            </section>
+
+            <!-- Assistant Section -->
+            <section id="assistant-section" class="content-section glass-panel" style="display: none;">
+                <header>
+                    <h2>AI Assistant</h2>
+                    <p>Personalized insights based on your profile.</p>
+                </header>
+                <div class="chat-container">
+                    <div class="chat-history" id="chat-history">
+                        <div class="message assistant">
+                            <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                            <div class="bubble">Hello! I am your EcoTrack assistant. Complete the Carbon Calculator so I can provide personalized recommendations for you!</div>
+                        </div>
+                    </div>
+                    <div class="chat-input-area">
+                        <input type="text" id="chat-input" placeholder="Ask me about reducing your footprint..." disabled>
+                        <button id="chat-send" class="btn icon-btn" disabled><i class="fa-solid fa-paper-plane"></i></button>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
