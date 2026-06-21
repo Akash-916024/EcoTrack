@@ -23,18 +23,18 @@
                 <i class="fa-solid fa-leaf"></i>
                 <h1>EcoTrack</h1>
             </div>
-            <ul class="nav-links">
-                <li class="active" data-target="dashboard-section"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
-                <li data-target="calculator-section"><i class="fa-solid fa-calculator"></i> Calculator</li>
-                <li data-target="tracker-section"><i class="fa-solid fa-list-check"></i> Action Tracker</li>
-                <li data-target="assistant-section"><i class="fa-solid fa-robot"></i> AI Assistant</li>
+            <ul class="nav-links" role="navigation" aria-label="Main Navigation">
+                <li><button class="nav-btn active" data-target="dashboard-section" aria-label="Dashboard Tab"><i class="fa-solid fa-chart-pie"></i> Dashboard</button></li>
+                <li><button class="nav-btn" data-target="calculator-section" aria-label="Calculator Tab"><i class="fa-solid fa-calculator"></i> Calculator</button></li>
+                <li><button class="nav-btn" data-target="tracker-section" aria-label="Action Tracker Tab"><i class="fa-solid fa-list-check"></i> Action Tracker</button></li>
+                <li><button class="nav-btn" data-target="assistant-section" aria-label="AI Assistant Tab"><i class="fa-solid fa-robot"></i> AI Assistant</button></li>
             </ul>
             
             <!-- Dev Tools (For Testing) -->
-            <div class="dev-tools">
-                <h4><i class="fa-solid fa-wrench"></i> Demo Tools</h4>
-                <button id="dev-next-day" class="btn outline-btn btn-sm">Simulate Next Day</button>
-                <button id="dev-clear" class="btn outline-btn btn-sm" style="color: #d32f2f; border-color: #d32f2f;">Reset All Data</button>
+            <div class="demo-tools">
+                <h4><i class="fa-solid fa-wrench" aria-hidden="true"></i> DEMO TOOLS</h4>
+                <button class="btn btn-outline" id="demo-next-day" aria-label="Simulate passage of 24 hours">Simulate Next Day</button>
+                <button class="btn btn-danger" id="demo-reset" aria-label="Reset all local data">Reset All Data</button>
             </div>
         </nav>
 
@@ -48,7 +48,7 @@
                         <h2>Welcome to EcoTrack</h2>
                         <p>Your personalized journey to a greener lifestyle.</p>
                     </div>
-                    <button id="btn-export" class="btn primary-btn"><i class="fa-solid fa-download"></i> Share Report</button>
+                    <button id="btn-export" class="btn primary-btn" aria-label="Export Dashboard as Image"><i class="fa-solid fa-download"></i> Share Report</button>
                 </header>
                 
                 <div id="export-target">
@@ -146,7 +146,7 @@
                             <option value="renewable">100% Renewable</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn primary-btn">Calculate Base Footprint</button>
+                    <button type="submit" class="btn" aria-label="Calculate Footprint">Calculate Footprint</button>
                 </form>
                 <div id="calc-result" class="result-box hidden">
                     <h3>Base Footprint: <span id="result-value"></span> tons CO₂/yr</h3>
@@ -158,18 +158,37 @@
             <section id="tracker-section" class="content-section glass-panel" style="display: none;">
                 <header>
                     <h2>Action Tracker</h2>
-                    <p>Complete tasks daily to increase your streak and actively reduce your footprint.</p>
+                    <p>Complete daily tasks to maintain your streak, or do bonus tasks for extra footprint reduction!</p>
                 </header>
-                <div class="tracker-list" id="tracker-list">
-                    <!-- Actions will be injected here by JS -->
+                <div class="tracker-container">
+                    <div class="tracker-category">
+                        <h3><i class="fa-solid fa-calendar-day" aria-hidden="true"></i> Daily Actions</h3>
+                        <p class="category-desc">Must complete daily. Missed tasks will increase your footprint.</p>
+                        <div class="tracker-list" id="daily-tracker-list">
+                            <!-- Daily Actions will be injected here -->
+                        </div>
+                    </div>
+                    <div class="tracker-category">
+                        <h3><i class="fa-solid fa-star" aria-hidden="true"></i> Bonus Actions</h3>
+                        <p class="category-desc">Optional tasks. No penalty if missed, but great for reducing footprint!</p>
+                        <div class="tracker-list" id="bonus-tracker-list">
+                            <!-- Bonus Actions will be injected here -->
+                        </div>
+                    </div>
                 </div>
             </section>
 
             <!-- Assistant Section -->
             <section id="assistant-section" class="content-section glass-panel" style="display: none;">
-                <header>
-                    <h2>AI Assistant</h2>
-                    <p>Personalized insights based on your profile.</p>
+                <header class="assistant-header">
+                    <div>
+                        <h2>AI Assistant</h2>
+                        <p>Personalized insights based on your profile.</p>
+                    </div>
+                    <div class="api-key-container">
+                        <input type="password" id="gemini-api-key" placeholder="Enter Gemini API Key (Optional)" aria-label="Gemini API Key" autocomplete="off">
+                        <button id="save-api-key" class="btn btn-outline" aria-label="Save API Key">Save Key</button>
+                    </div>
                 </header>
                 <div class="chat-container">
                     <div class="chat-history" id="chat-history">
@@ -179,8 +198,8 @@
                         </div>
                     </div>
                     <div class="chat-input-area">
-                        <input type="text" id="chat-input" placeholder="Ask me about reducing your footprint..." disabled>
-                        <button id="chat-send" class="btn icon-btn" disabled><i class="fa-solid fa-paper-plane"></i></button>
+                        <input type="text" id="chat-input" placeholder="Ask me about reducing your footprint..." disabled aria-label="Chat Message Input">
+                        <button id="chat-send" class="btn icon-btn" disabled aria-label="Send Message"><i class="fa-solid fa-paper-plane" aria-hidden="true"></i></button>
                     </div>
                 </div>
             </section>

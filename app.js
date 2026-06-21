@@ -1,4 +1,6 @@
 // --- Initial State Definition ---
+let geminiApiKey = localStorage.getItem('geminiApiKey') || '';
+
 const defaultState = {
     baseFootprint: 0,
     currentFootprint: 0,
@@ -10,12 +12,12 @@ const defaultState = {
     lastLoginDate: new Date().toDateString(), // e.g. "Sun Oct 22 2023"
     footprintBreakdown: { transport: 0, diet: 0, energy: 0 },
     actions: [
-        { id: 1, text: "Use reusable shopping bags", impact: "Low Impact", reduction: 0.005, completed: false },
-        { id: 2, text: "Turn off lights when leaving room", impact: "Low Impact", reduction: 0.005, completed: false },
-        { id: 3, text: "Use public transport or carpool", impact: "High Impact", reduction: 0.020, completed: false },
-        { id: 4, text: "Eat a meatless meal today", impact: "Medium Impact", reduction: 0.010, completed: false },
-        { id: 5, text: "Unplug electronics not in use", impact: "Low Impact", reduction: 0.005, completed: false },
-        { id: 6, text: "Wash clothes in cold water", impact: "Medium Impact", reduction: 0.005, completed: false }
+        { id: 1, type: "daily", text: "Use a bucket bath instead of a shower", impact: "High Impact", reduction: 0.020, completed: false },
+        { id: 2, type: "daily", text: "Turn off fans/AC when leaving room", impact: "Medium Impact", reduction: 0.010, completed: false },
+        { id: 3, type: "daily", text: "Carry a cloth bag for shopping", impact: "Low Impact", reduction: 0.005, completed: false },
+        { id: 4, type: "bonus", text: "Take a train instead of personal vehicle", impact: "High Impact", reduction: 0.030, completed: false },
+        { id: 5, type: "bonus", text: "Eat a completely plant-based meal", impact: "Medium Impact", reduction: 0.015, completed: false },
+        { id: 6, type: "bonus", text: "Avoid food delivery apps (cook at home)", impact: "Low Impact", reduction: 0.010, completed: false }
     ],
     userProfile: {
         transport: null,
@@ -38,13 +40,24 @@ function loadState() {
     if (saved) {
         let parsed = JSON.parse(saved);
         
+        // Force migration for new schema (daily vs bonus)
+        if (parsed.actions.length > 0 && !parsed.actions[0].type) {
+            localStorage.removeItem('ecoTrackState');
+            state = JSON.parse(JSON.stringify(defaultState));
+            saveState();
+            loadState(); // Recursively reload
+            return;
+        }
+
         // Ensure new properties exist
         if (!parsed.unlockedBadges) parsed.unlockedBadges = [];
         if (parsed.cumulativeReduction === undefined) parsed.cumulativeReduction = 0;
         
         // Force update reduction values from defaultState in case of old cached data
         parsed.actions.forEach((savedAction, index) => {
-            savedAction.reduction = defaultState.actions[index].reduction;
+            if (defaultState.actions[index]) {
+                savedAction.reduction = defaultState.actions[index].reduction;
+            }
         });
         
         state = parsed;
@@ -66,10 +79,10 @@ function checkDailyRefresh() {
     if (state.lastLoginDate !== today) {
         
         if (state.hasCalculated) {
-            // Apply penalty for uncompleted tasks from yesterday
+            // Apply penalty for uncompleted DAILY tasks from yesterday
             let penalty = 0;
             state.actions.forEach(a => {
-                if (!a.completed) {
+                if (a.type === 'daily' && !a.completed) {
                     penalty += a.reduction;
                 }
             });
@@ -179,14 +192,14 @@ calcForm.addEventListener('submit', (e) => {
 });
 
 function calculateCurrentFootprint() {
-    let anyCompleted = state.actions.some(a => a.completed);
+    let anyDailyCompleted = state.actions.some(a => a.completed && a.type === 'daily');
     
-    // Dynamic Streak Logic
-    if (anyCompleted && !state.streakIncrementedToday) {
+    // Dynamic Streak Logic (Requires at least 1 daily task)
+    if (anyDailyCompleted && !state.streakIncrementedToday) {
         state.streak++;
         state.streakIncrementedToday = true;
         showStreakAnimation();
-    } else if (!anyCompleted && state.streakIncrementedToday) {
+    } else if (!anyDailyCompleted && state.streakIncrementedToday) {
         state.streak--;
         state.streakIncrementedToday = false;
     }
@@ -238,7 +251,7 @@ function updateDashboardUI() {
 
     badges.forEach(b => {
         const el = document.getElementById(b.id);
-        el.classList.toggle('unlocked', b.condition);
+        if (el) el.classList.toggle('unlocked', b.condition);
 
         if (b.condition && !state.unlockedBadges.includes(b.id)) {
             state.unlockedBadges.push(b.id);
@@ -281,20 +294,29 @@ function showToast(title, message, iconClass, colorVar) {
 
 // --- Tracker Logic ---
 function renderTracker() {
-    trackerList.innerHTML = '';
+    const dailyList = document.getElementById('daily-tracker-list');
+    const bonusList = document.getElementById('bonus-tracker-list');
+    
+    if (!dailyList || !bonusList) return;
+    dailyList.innerHTML = '';
+    bonusList.innerHTML = '';
     let completedCount = 0;
 
     state.actions.forEach(action => {
         if (action.completed) completedCount++;
-
         const item = document.createElement('div');
         item.className = `tracker-item ${action.completed ? 'completed' : ''}`;
+        
         item.innerHTML = `
-            <div class="checkbox"></div>
-            <div class="item-text">${action.text} <span class="item-reduction">(-${action.reduction} tons)</span></div>
-            <div class="item-impact">${action.impact}</div>
+            <div class="checkbox ${action.completed ? 'checked' : ''}" aria-label="Toggle task completion">
+                <i class="fa-solid fa-check"></i>
+            </div>
+            <div class="tracker-info">
+                <h4>${action.text}</h4>
+                <p>${action.impact} (-${action.reduction} tons)</p>
+            </div>
         `;
-
+        
         item.addEventListener('click', () => {
             if(!state.hasCalculated) {
                 alert("Please calculate your baseline footprint in the Calculator first!");
@@ -312,18 +334,24 @@ function renderTracker() {
             renderTracker();
         });
 
-        trackerList.appendChild(item);
+        if (action.type === 'daily') {
+            dailyList.appendChild(item);
+        } else {
+            bonusList.appendChild(item);
+        }
     });
 
     // Update Dashboard Stats for Tracker
     actionsCompleted.textContent = completedCount;
     actionsTotal.textContent = state.actions.length;
-    actionProgress.style.width = `${(completedCount / state.actions.length) * 100}%`;
+    if (actionProgress) actionProgress.style.width = `${(completedCount / state.actions.length) * 100}%`;
 }
 
 // --- Chart.js Visualization ---
 function renderChart() {
-    const ctx = document.getElementById('footprintChart').getContext('2d');
+    const canvas = document.getElementById('footprintChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
     
     if (myChart) {
         myChart.destroy();
@@ -350,73 +378,161 @@ function renderChart() {
 }
 
 
-// --- AI Assistant Logic (Simulated) ---
-function addMessage(text, sender = 'assistant') {
-    const msg = document.createElement('div');
-    msg.className = `message ${sender}`;
-    let avatarIcon = sender === 'assistant' ? 'fa-robot' : 'fa-user';
-    msg.innerHTML = `
-        <div class="avatar"><i class="fa-solid ${avatarIcon}"></i></div>
-        <div class="bubble">${text}</div>
+// --- AI Assistant Logic ---
+function triggerAssistantAnalysis(silent = false) {
+    const input = document.getElementById('chat-input');
+    const sendBtn = document.getElementById('chat-send');
+    if (input && sendBtn) {
+        input.disabled = false;
+        sendBtn.disabled = false;
+    }
+
+    if (!silent) {
+        const history = document.getElementById('chat-history');
+        history.innerHTML += `
+            <div class="message assistant">
+                <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+                <div class="bubble">I see you've updated your profile! You have a footprint of ${state.currentFootprint} tons. How can I help you reduce it today?</div>
+            </div>
+        `;
+    }
+}
+
+// Smarter Simulated AI
+function generateSimulatedResponse(msg) {
+    let uncompletedDaily = state.actions.filter(a => a.type === 'daily' && !a.completed).map(a => a.text).join(", ");
+    let uncompletedBonus = state.actions.filter(a => a.type === 'bonus' && !a.completed).map(a => a.text).join(", ");
+    
+    let advice = "<strong>Based on your profile:</strong><br>";
+    if (state.userProfile.transport === 'petrol' || state.userProfile.transport === 'diesel') {
+        advice += "🚂 Switching from a fossil-fuel vehicle to a train or EV can massively reduce your footprint.<br>";
+    }
+    if (state.userProfile.diet === 'meat') {
+        advice += "🥗 Adding just one more completely plant-based meal a week has a huge impact.<br>";
+    }
+    
+    if (uncompletedDaily) {
+        advice += `<br><strong>⚠️ Don't forget your daily tasks:</strong><br>- ${uncompletedDaily.replace(/, /g, "<br>- ")}<br><em>Missing these will increase your footprint tomorrow!</em>`;
+    }
+    if (uncompletedBonus) {
+        advice += `<br><br><strong>🌟 Looking for extra reductions? Try:</strong><br>- ${uncompletedBonus.replace(/, /g, "<br>- ")}`;
+    }
+    
+    return advice;
+}
+
+// Gemini Fetch call
+async function fetchGeminiResponse(userMsg) {
+    if (!geminiApiKey) return generateSimulatedResponse(userMsg);
+    
+    const context = `You are an EcoTrack AI Assistant. The user's base footprint is ${state.baseFootprint} tons CO2/yr and current footprint is ${state.currentFootprint} tons. Their profile: Transport=${state.userProfile.transport}, Diet=${state.userProfile.diet}, Energy=${state.userProfile.energy}. They have these uncompleted tasks: ${state.actions.filter(a => !a.completed).map(a => a.text).join(", ")}. If you recommend a new actionable task for them to track, append exactly this string to the very end of your response: [ADD_ACTION] <Task Name>. E.g., [ADD_ACTION] Plant a tree in the neighborhood. Keep answers concise, actionable, and formatted with emojis.`;
+    
+    try {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                contents: [
+                    { role: "user", parts: [{ text: context }] },
+                    { role: "user", parts: [{ text: userMsg }] }
+                ]
+            })
+        });
+        
+        const data = await response.json();
+        if (data.error) throw new Error(data.error.message);
+        
+        let text = data.candidates[0].content.parts[0].text;
+        
+        // Check for Add Action command
+        const actionMatch = text.match(/\[ADD_ACTION\]\s*(.+)$/im);
+        if (actionMatch) {
+            const newAction = actionMatch[1].trim();
+            text = text.replace(/\[ADD_ACTION\]\s*(.+)$/im, `<br><br><button class="btn btn-outline btn-sm action-add-btn" data-action="${newAction}">Add "${newAction}" to Bonus Actions</button>`);
+        }
+        
+        // Basic Markdown to HTML parsing for bolding
+        text = text.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+        
+        return text;
+    } catch (e) {
+        console.error(e);
+        return `<em>(Error connecting to Gemini. Falling back to simulated AI)</em><br><br>` + generateSimulatedResponse(userMsg);
+    }
+}
+
+async function handleChatSubmit() {
+    const input = document.getElementById('chat-input');
+    const msg = input.value.trim();
+    if (!msg) return;
+
+    const chatHistory = document.getElementById('chat-history');
+    
+    // User message
+    chatHistory.innerHTML += `
+        <div class="message user">
+            <div class="bubble">${msg}</div>
+            <div class="avatar"><i class="fa-solid fa-user"></i></div>
+        </div>
     `;
-    chatHistory.appendChild(msg);
+    
+    input.value = '';
+    
+    // Typing indicator
+    chatHistory.innerHTML += `
+        <div class="message assistant typing-indicator">
+            <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+            <div class="bubble">...</div>
+        </div>
+    `;
+    chatHistory.scrollTop = chatHistory.scrollHeight;
+
+    // Fetch Response
+    const responseHTML = await fetchGeminiResponse(msg);
+    
+    // Remove typing indicator
+    document.querySelector('.typing-indicator').remove();
+    
+    // Add Assistant message
+    chatHistory.innerHTML += `
+        <div class="message assistant">
+            <div class="avatar"><i class="fa-solid fa-robot"></i></div>
+            <div class="bubble">${responseHTML}</div>
+        </div>
+    `;
+    
+    // Add event listeners to dynamically added buttons
+    document.querySelectorAll('.action-add-btn').forEach(btn => {
+        // Clone to remove previous listeners if re-binding
+        const newBtn = btn.cloneNode(true);
+        btn.parentNode.replaceChild(newBtn, btn);
+        
+        newBtn.addEventListener('click', (e) => {
+            const actionText = e.target.getAttribute('data-action');
+            state.actions.push({
+                id: Date.now(),
+                type: 'bonus',
+                text: actionText,
+                impact: "AI Custom",
+                reduction: 0.015,
+                completed: false
+            });
+            saveState();
+            renderTracker();
+            showToast("Action Added!", `"${actionText}" added to Bonus Actions.`, "fa-solid fa-plus", "silver");
+            e.target.disabled = true;
+            e.target.textContent = "Added to Tracker!";
+        });
+    });
+
     chatHistory.scrollTop = chatHistory.scrollHeight;
 }
 
-function triggerAssistantAnalysis(silent = false) {
-    chatInput.disabled = false;
-    chatSendBtn.disabled = false;
-    
-    if (silent) return; // Don't spam messages on reload
-
-    setTimeout(() => {
-        let msg = `I've analyzed your profile. Your baseline footprint is **${state.baseFootprint} tons CO₂/yr**. `;
-        
-        if (state.userProfile.transport === 'car_petrol' || state.userProfile.transport === 'car_diesel') {
-            msg += "Since you drive a petrol/diesel car daily, consider carpooling or switching to public transit (like bus or metro) a few days a week to make a massive impact. ";
-        } else if (state.userProfile.transport === 'public_taxi') {
-            msg += "Using taxis or auto-rickshaws frequently still adds up. Try using the metro or bus for routine commutes if possible! ";
-        }
-
-        if (state.userProfile.diet === 'meat_heavy') {
-            msg += "A meat-heavy diet contributes significantly to emissions. Trying 'Meatless Mondays' is an easy way to lower your impact! ";
-        }
-        
-        msg += "Head to the Action Tracker to complete daily tasks and lower your footprint to unlock badges!";
-        addMessage(msg, 'assistant');
-    }, 1000);
-}
-
 // Handle Chat
-chatSendBtn.addEventListener('click', handleUserMessage);
+chatSendBtn.addEventListener('click', handleChatSubmit);
 chatInput.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') handleUserMessage();
+    if (e.key === 'Enter') handleChatSubmit();
 });
-
-function handleUserMessage() {
-    const text = chatInput.value.trim();
-    if (!text) return;
-
-    addMessage(text, 'user');
-    chatInput.value = '';
-
-    setTimeout(() => {
-        let response = "That's a great question! Reducing carbon footprint is an ongoing journey.";
-        const lowerText = text.toLowerCase();
-        
-        if (lowerText.includes('diet') || lowerText.includes('food')) {
-            response = "For food, try buying local and seasonal produce. It reduces transportation emissions and supports local farmers!";
-        } else if (lowerText.includes('car') || lowerText.includes('transport')) {
-            response = "Transportation is a major emission source. Even proper tire inflation can improve gas mileage by up to 3%, saving fuel!";
-        } else if (lowerText.includes('energy') || lowerText.includes('electricity')) {
-            response = "Switching to LED bulbs uses at least 75% less energy and lasts 25 times longer than incandescent lighting.";
-        } else {
-            response = "I'm still learning! But I recommend checking your Action Tracker and completing tasks to keep your streak going.";
-        }
-
-        addMessage(response, 'assistant');
-    }, 1000);
-}
 
 // --- Report Export (html2canvas) ---
 document.getElementById('btn-export').addEventListener('click', () => {
@@ -443,10 +559,25 @@ document.getElementById('dev-next-day').addEventListener('click', () => {
     alert("Simulated next day! Notice how the tasks have reset and your streak was evaluated.");
 });
 
-document.getElementById('dev-clear').addEventListener('click', () => {
-    localStorage.removeItem('ecoTrackState');
-    location.reload();
+document.getElementById('demo-reset').addEventListener('click', () => {
+    if(confirm("Are you sure you want to reset all data?")) {
+        localStorage.removeItem('ecoTrackState');
+        localStorage.removeItem('geminiApiKey');
+        location.reload();
+    }
 });
+
+// API Key Event Listener
+const apiKeyInput = document.getElementById('gemini-api-key');
+const saveKeyBtn = document.getElementById('save-api-key');
+if (apiKeyInput && saveKeyBtn) {
+    apiKeyInput.value = geminiApiKey;
+    saveKeyBtn.addEventListener('click', () => {
+        geminiApiKey = apiKeyInput.value.trim();
+        localStorage.setItem('geminiApiKey', geminiApiKey);
+        showToast("Success", "Gemini API Key Saved!", "fa-solid fa-key", "gold");
+    });
+}
 
 // Boot app
 loadState();

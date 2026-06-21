@@ -654,6 +654,50 @@ select:focus, input[type="text"]:focus {
     color: #666;
 }
 
+/* Tracker Categories */
+.tracker-container {
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    margin-top: 20px;
+}
+.tracker-category h3 {
+    margin-bottom: 5px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--primary-color);
+}
+.category-desc {
+    font-size: 14px;
+    color: #666;
+    margin-bottom: 15px;
+}
+
+/* Assistant Header & Gemini */
+.assistant-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+.api-key-container {
+    display: flex;
+    gap: 10px;
+}
+.api-key-container input {
+    padding: 8px 15px;
+    border: 1px solid rgba(0,0,0,0.1);
+    border-radius: 6px;
+    background: rgba(255,255,255,0.7);
+    width: 250px;
+}
+.action-add-btn {
+    margin-top: 10px;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
     .app-container {
