@@ -6,15 +6,16 @@ const defaultState = {
     streak: 0,
     streakIncrementedToday: false,
     unlockedBadges: [],
+    cumulativeReduction: 0,
     lastLoginDate: new Date().toDateString(), // e.g. "Sun Oct 22 2023"
     footprintBreakdown: { transport: 0, diet: 0, energy: 0 },
     actions: [
-        { id: 1, text: "Use reusable shopping bags", impact: "Low Impact", reduction: 0.05, completed: false },
-        { id: 2, text: "Turn off lights when leaving room", impact: "Low Impact", reduction: 0.05, completed: false },
-        { id: 3, text: "Use public transport or carpool", impact: "High Impact", reduction: 0.20, completed: false },
-        { id: 4, text: "Eat a meatless meal today", impact: "Medium Impact", reduction: 0.15, completed: false },
-        { id: 5, text: "Unplug electronics not in use", impact: "Low Impact", reduction: 0.05, completed: false },
-        { id: 6, text: "Wash clothes in cold water", impact: "Medium Impact", reduction: 0.05, completed: false }
+        { id: 1, text: "Use reusable shopping bags", impact: "Low Impact", reduction: 0.005, completed: false },
+        { id: 2, text: "Turn off lights when leaving room", impact: "Low Impact", reduction: 0.005, completed: false },
+        { id: 3, text: "Use public transport or carpool", impact: "High Impact", reduction: 0.020, completed: false },
+        { id: 4, text: "Eat a meatless meal today", impact: "Medium Impact", reduction: 0.010, completed: false },
+        { id: 5, text: "Unplug electronics not in use", impact: "Low Impact", reduction: 0.005, completed: false },
+        { id: 6, text: "Wash clothes in cold water", impact: "Medium Impact", reduction: 0.005, completed: false }
     ],
     userProfile: {
         transport: null,
@@ -39,6 +40,7 @@ function loadState() {
         
         // Ensure new properties exist
         if (!parsed.unlockedBadges) parsed.unlockedBadges = [];
+        if (parsed.cumulativeReduction === undefined) parsed.cumulativeReduction = 0;
         
         // Force update reduction values from defaultState in case of old cached data
         parsed.actions.forEach((savedAction, index) => {
@@ -150,6 +152,10 @@ calcForm.addEventListener('submit', (e) => {
     const total = tVal + dVal + enVal;
     state.baseFootprint = parseFloat(total.toFixed(2));
     state.hasCalculated = true;
+    
+    // Reset cumulative reduction when recalculating baseline
+    state.cumulativeReduction = 0;
+    state.actions.forEach(a => a.completed = false);
 
     calculateCurrentFootprint(); // This will saveState internally
 
@@ -161,12 +167,7 @@ calcForm.addEventListener('submit', (e) => {
 });
 
 function calculateCurrentFootprint() {
-    let reduction = 0;
-    let allCompleted = true;
-    state.actions.forEach(a => {
-        if (a.completed) reduction += a.reduction;
-        else allCompleted = false;
-    });
+    let allCompleted = state.actions.every(a => a.completed);
     
     // Dynamic Streak Logic
     if (allCompleted && !state.streakIncrementedToday) {
@@ -178,9 +179,9 @@ function calculateCurrentFootprint() {
         state.streakIncrementedToday = false;
     }
 
-    // Ensure it doesn't drop below 0 unrealistically
-    let current = state.baseFootprint - reduction;
-    state.currentFootprint = current > 0 ? parseFloat(current.toFixed(2)) : 0;
+    // Calculate permanent reduction
+    let current = state.baseFootprint - state.cumulativeReduction;
+    state.currentFootprint = current > 0 ? parseFloat(current.toFixed(3)) : 0;
     
     saveState();
 }
@@ -287,7 +288,14 @@ function renderTracker() {
                 alert("Please calculate your baseline footprint in the Calculator first!");
                 return;
             }
-            action.completed = !action.completed;
+            if (!action.completed) {
+                action.completed = true;
+                state.cumulativeReduction += action.reduction;
+            } else {
+                action.completed = false;
+                state.cumulativeReduction -= action.reduction;
+            }
+            
             calculateCurrentFootprint(); // Saves state and updates UI
             renderTracker();
         });
