@@ -64,6 +64,18 @@ function loadState() {
 function checkDailyRefresh() {
     const today = new Date().toDateString();
     if (state.lastLoginDate !== today) {
+        
+        if (state.hasCalculated) {
+            // Apply penalty for uncompleted tasks from yesterday
+            let penalty = 0;
+            state.actions.forEach(a => {
+                if (!a.completed) {
+                    penalty += a.reduction;
+                }
+            });
+            state.cumulativeReduction -= penalty;
+        }
+
         // Evaluate yesterday's performance for streak
         if (!state.streakIncrementedToday && state.streak > 0) {
             state.streak = 0; // Broke the streak yesterday
@@ -74,7 +86,7 @@ function checkDailyRefresh() {
         state.streakIncrementedToday = false;
         state.lastLoginDate = today;
         
-        // Recalculate current footprint (reset reductions)
+        // Recalculate current footprint
         calculateCurrentFootprint();
         saveState();
     }
