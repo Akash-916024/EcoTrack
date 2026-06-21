@@ -4,15 +4,16 @@ const defaultState = {
     currentFootprint: 0,
     hasCalculated: false,
     streak: 0,
+    streakIncrementedToday: false,
     lastLoginDate: new Date().toDateString(), // e.g. "Sun Oct 22 2023"
     footprintBreakdown: { transport: 0, diet: 0, energy: 0 },
     actions: [
-        { id: 1, text: "Use reusable shopping bags", impact: "Low Impact", reduction: 0.01, completed: false },
-        { id: 2, text: "Turn off lights when leaving room", impact: "Low Impact", reduction: 0.01, completed: false },
-        { id: 3, text: "Use public transport or carpool", impact: "High Impact", reduction: 0.10, completed: false },
-        { id: 4, text: "Eat a meatless meal today", impact: "Medium Impact", reduction: 0.05, completed: false },
-        { id: 5, text: "Unplug electronics not in use", impact: "Low Impact", reduction: 0.01, completed: false },
-        { id: 6, text: "Wash clothes in cold water", impact: "Medium Impact", reduction: 0.03, completed: false }
+        { id: 1, text: "Use reusable shopping bags", impact: "Low Impact", reduction: 0.05, completed: false },
+        { id: 2, text: "Turn off lights when leaving room", impact: "Low Impact", reduction: 0.05, completed: false },
+        { id: 3, text: "Use public transport or carpool", impact: "High Impact", reduction: 0.20, completed: false },
+        { id: 4, text: "Eat a meatless meal today", impact: "Medium Impact", reduction: 0.15, completed: false },
+        { id: 5, text: "Unplug electronics not in use", impact: "Low Impact", reduction: 0.05, completed: false },
+        { id: 6, text: "Wash clothes in cold water", impact: "Medium Impact", reduction: 0.05, completed: false }
     ],
     userProfile: {
         transport: null,
@@ -51,15 +52,13 @@ function checkDailyRefresh() {
     const today = new Date().toDateString();
     if (state.lastLoginDate !== today) {
         // Evaluate yesterday's performance for streak
-        const allCompleted = state.actions.every(a => a.completed);
-        if (allCompleted) {
-            state.streak++;
-        } else {
-            state.streak = 0;
+        if (!state.streakIncrementedToday && state.streak > 0) {
+            state.streak = 0; // Broke the streak yesterday
         }
 
         // Reset tasks
         state.actions.forEach(a => a.completed = false);
+        state.streakIncrementedToday = false;
         state.lastLoginDate = today;
         
         // Recalculate current footprint (reset reductions)
@@ -152,15 +151,37 @@ calcForm.addEventListener('submit', (e) => {
 
 function calculateCurrentFootprint() {
     let reduction = 0;
+    let allCompleted = true;
     state.actions.forEach(a => {
         if (a.completed) reduction += a.reduction;
+        else allCompleted = false;
     });
     
+    // Dynamic Streak Logic
+    if (allCompleted && !state.streakIncrementedToday) {
+        state.streak++;
+        state.streakIncrementedToday = true;
+        showStreakAnimation();
+    } else if (!allCompleted && state.streakIncrementedToday) {
+        state.streak--;
+        state.streakIncrementedToday = false;
+    }
+
     // Ensure it doesn't drop below 0 unrealistically
     let current = state.baseFootprint - reduction;
     state.currentFootprint = current > 0 ? parseFloat(current.toFixed(2)) : 0;
     
     saveState();
+}
+
+function showStreakAnimation() {
+    const icon = document.querySelector('.streak-icon');
+    if (icon) {
+        icon.classList.add('pop-animation');
+        setTimeout(() => {
+            icon.classList.remove('pop-animation');
+        }, 1000);
+    }
 }
 
 // --- Dashboard & Gamification UI ---
