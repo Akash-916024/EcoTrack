@@ -428,7 +428,7 @@ async function fetchGeminiResponse(userMsg) {
     const context = `You are an EcoTrack AI Assistant. The user's base footprint is ${state.baseFootprint} tons CO2/yr and current footprint is ${state.currentFootprint} tons. Their profile: Transport=${state.userProfile.transport}, Diet=${state.userProfile.diet}, Energy=${state.userProfile.energy}. They have these uncompleted tasks: ${state.actions.filter(a => !a.completed).map(a => a.text).join(", ")}. If you recommend a new actionable task for them to track, append exactly this string to the very end of your response: [ADD_ACTION] <Task Name>. E.g., [ADD_ACTION] Plant a tree in the neighborhood. Keep answers concise, actionable, and formatted with emojis.`;
     
     try {
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-lite:generateContent?key=${geminiApiKey}`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
