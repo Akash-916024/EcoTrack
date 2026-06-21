@@ -547,7 +547,7 @@ document.getElementById('btn-export').addEventListener('click', () => {
 });
 
 // --- Dev Tools (Testing only) ---
-document.getElementById('dev-next-day').addEventListener('click', () => {
+document.getElementById('demo-next-day').addEventListener('click', () => {
     // Manually set last login to yesterday
     let yesterday = new Date();
     yesterday.setDate(yesterday.getDate() - 1);
