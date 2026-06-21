@@ -5,6 +5,7 @@ const defaultState = {
     hasCalculated: false,
     streak: 0,
     streakIncrementedToday: false,
+    unlockedBadges: [],
     lastLoginDate: new Date().toDateString(), // e.g. "Sun Oct 22 2023"
     footprintBreakdown: { transport: 0, diet: 0, energy: 0 },
     actions: [
@@ -34,7 +35,17 @@ function saveState() {
 function loadState() {
     const saved = localStorage.getItem('ecoTrackState');
     if (saved) {
-        state = JSON.parse(saved);
+        let parsed = JSON.parse(saved);
+        
+        // Ensure new properties exist
+        if (!parsed.unlockedBadges) parsed.unlockedBadges = [];
+        
+        // Force update reduction values from defaultState in case of old cached data
+        parsed.actions.forEach((savedAction, index) => {
+            savedAction.reduction = defaultState.actions[index].reduction;
+        });
+        
+        state = parsed;
         checkDailyRefresh();
     }
     
@@ -177,10 +188,10 @@ function calculateCurrentFootprint() {
 function showStreakAnimation() {
     const icon = document.querySelector('.streak-icon');
     if (icon) {
+        // Remove and re-add class with reflow to ensure animation restarts
+        icon.classList.remove('pop-animation');
+        void icon.offsetWidth; 
         icon.classList.add('pop-animation');
-        setTimeout(() => {
-            icon.classList.remove('pop-animation');
-        }, 1000);
     }
 }
 
@@ -203,17 +214,56 @@ function updateDashboardUI() {
     }
 
     // Evaluate Badges
-    // Streak Badges
-    document.getElementById('badge-streak-bronze').classList.toggle('unlocked', state.streak >= 3);
-    document.getElementById('badge-streak-silver').classList.toggle('unlocked', state.streak >= 7);
-    document.getElementById('badge-streak-gold').classList.toggle('unlocked', state.streak >= 30);
+    const badges = [
+        { id: 'badge-streak-bronze', condition: state.streak >= 3, name: 'Bronze (3 Days)', icon: 'fa-solid fa-fire', color: 'bronze' },
+        { id: 'badge-streak-silver', condition: state.streak >= 7, name: 'Silver (7 Days)', icon: 'fa-solid fa-fire-flame-curved', color: 'silver' },
+        { id: 'badge-streak-gold', condition: state.streak >= 30, name: 'Gold (30 Days)', icon: 'fa-solid fa-crown', color: 'gold' },
+        { id: 'badge-footprint-bronze', condition: state.currentFootprint > 0 && state.currentFootprint <= 4.0, name: 'Footprint < 4', icon: 'fa-solid fa-leaf', color: 'bronze' },
+        { id: 'badge-footprint-silver', condition: state.currentFootprint > 0 && state.currentFootprint <= 2.5, name: 'Footprint < 2.5', icon: 'fa-brands fa-envira', color: 'silver' },
+        { id: 'badge-footprint-gold', condition: state.currentFootprint > 0 && state.currentFootprint <= 1.5, name: 'Footprint < 1.5', icon: 'fa-solid fa-tree', color: 'gold' },
+    ];
 
-    // Footprint Badges
-    document.getElementById('badge-footprint-bronze').classList.toggle('unlocked', state.currentFootprint > 0 && state.currentFootprint < 4);
-    document.getElementById('badge-footprint-silver').classList.toggle('unlocked', state.currentFootprint > 0 && state.currentFootprint < 2.5);
-    document.getElementById('badge-footprint-gold').classList.toggle('unlocked', state.currentFootprint > 0 && state.currentFootprint < 1.5);
+    badges.forEach(b => {
+        const el = document.getElementById(b.id);
+        el.classList.toggle('unlocked', b.condition);
+
+        if (b.condition && !state.unlockedBadges.includes(b.id)) {
+            state.unlockedBadges.push(b.id);
+            if (state.hasCalculated) {
+                showToast("Achievement Unlocked!", b.name, b.icon, b.color);
+            }
+            saveState();
+        } else if (!b.condition && state.unlockedBadges.includes(b.id)) {
+            state.unlockedBadges = state.unlockedBadges.filter(id => id !== b.id);
+            saveState();
+        }
+    });
 
     renderChart();
+}
+
+// --- Toast Notification Logic ---
+function showToast(title, message, iconClass, colorVar) {
+    const container = document.getElementById('toast-container');
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `
+        <div class="toast-icon" style="color: var(--${colorVar})"><i class="${iconClass}"></i></div>
+        <div class="toast-content">
+            <h4>${title}</h4>
+            <p>${message}</p>
+        </div>
+    `;
+    container.appendChild(toast);
+    
+    // Trigger slide-in
+    setTimeout(() => toast.classList.add('show'), 10);
+    
+    // Slide-out and remove after 4 seconds
+    setTimeout(() => {
+        toast.classList.remove('show');
+        setTimeout(() => toast.remove(), 400);
+    }, 4000);
 }
 
 // --- Tracker Logic ---
