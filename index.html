@@ -24,17 +24,17 @@
                 <h1>EcoTrack</h1>
             </div>
             <ul class="nav-links" role="navigation" aria-label="Main Navigation">
-                <li><button class="nav-btn active" data-target="dashboard-section" aria-label="Dashboard Tab"><i class="fa-solid fa-chart-pie"></i> Dashboard</button></li>
-                <li><button class="nav-btn" data-target="calculator-section" aria-label="Calculator Tab"><i class="fa-solid fa-calculator"></i> Calculator</button></li>
-                <li><button class="nav-btn" data-target="tracker-section" aria-label="Action Tracker Tab"><i class="fa-solid fa-list-check"></i> Action Tracker</button></li>
-                <li><button class="nav-btn" data-target="assistant-section" aria-label="AI Assistant Tab"><i class="fa-solid fa-robot"></i> AI Assistant</button></li>
+                <li class="active" data-target="dashboard-section" tabindex="0" role="button" aria-label="Dashboard Tab" onkeypress="if(event.key==='Enter') this.click();"><i class="fa-solid fa-chart-pie"></i> Dashboard</li>
+                <li data-target="calculator-section" tabindex="0" role="button" aria-label="Calculator Tab" onkeypress="if(event.key==='Enter') this.click();"><i class="fa-solid fa-calculator"></i> Calculator</li>
+                <li data-target="tracker-section" tabindex="0" role="button" aria-label="Action Tracker Tab" onkeypress="if(event.key==='Enter') this.click();"><i class="fa-solid fa-list-check"></i> Action Tracker</li>
+                <li data-target="assistant-section" tabindex="0" role="button" aria-label="AI Assistant Tab" onkeypress="if(event.key==='Enter') this.click();"><i class="fa-solid fa-robot"></i> AI Assistant</li>
             </ul>
             
             <!-- Dev Tools (For Testing) -->
-            <div class="demo-tools">
+            <div class="dev-tools">
                 <h4><i class="fa-solid fa-wrench" aria-hidden="true"></i> DEMO TOOLS</h4>
-                <button class="btn btn-outline" id="demo-next-day" aria-label="Simulate passage of 24 hours">Simulate Next Day</button>
-                <button class="btn btn-danger" id="demo-reset" aria-label="Reset all local data">Reset All Data</button>
+                <button class="btn outline-btn btn-sm" id="demo-next-day" aria-label="Simulate passage of 24 hours">Simulate Next Day</button>
+                <button class="btn outline-btn btn-sm" id="demo-reset" style="color: #d32f2f; border-color: #d32f2f;" aria-label="Reset all local data">Reset All Data</button>
             </div>
         </nav>
 
