@@ -1,5 +1,6 @@
 # EcoTrack - Carbon Footprint Assistant
 
+**🚀 Live Demo:** [https://akash-916024.github.io/EcoTrack/](https://akash-916024.github.io/EcoTrack/)
 EcoTrack is a modern, dynamic web application designed to help individuals understand, track, and reduce their carbon footprint through simple actions and personalized insights. This project is submitted for **Challenge 3** of the Virtual Prompt War.
 
 ## Chosen Vertical
