@@ -179,14 +179,14 @@ calcForm.addEventListener('submit', (e) => {
 });
 
 function calculateCurrentFootprint() {
-    let allCompleted = state.actions.every(a => a.completed);
+    let anyCompleted = state.actions.some(a => a.completed);
     
     // Dynamic Streak Logic
-    if (allCompleted && !state.streakIncrementedToday) {
+    if (anyCompleted && !state.streakIncrementedToday) {
         state.streak++;
         state.streakIncrementedToday = true;
         showStreakAnimation();
-    } else if (!allCompleted && state.streakIncrementedToday) {
+    } else if (!anyCompleted && state.streakIncrementedToday) {
         state.streak--;
         state.streakIncrementedToday = false;
     }
