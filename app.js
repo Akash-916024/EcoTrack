@@ -433,8 +433,7 @@ async function fetchGeminiResponse(userMsg) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
                 contents: [
-                    { role: "user", parts: [{ text: context }] },
-                    { role: "user", parts: [{ text: userMsg }] }
+                    { role: "user", parts: [{ text: context + "\n\nUser Message: " + userMsg }] }
                 ]
             })
         });
