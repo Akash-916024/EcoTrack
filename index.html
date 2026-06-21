@@ -3,13 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>EcoTrack - Carbon Footprint Assistant</title>
+    <title>EcoTrack - Advanced Carbon Footprint Assistant</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
     <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Chart.js for Data Visualization -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- html2canvas for Exporting Reports -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <div class="app-container">
@@ -25,6 +29,13 @@
                 <li data-target="tracker-section"><i class="fa-solid fa-list-check"></i> Action Tracker</li>
                 <li data-target="assistant-section"><i class="fa-solid fa-robot"></i> AI Assistant</li>
             </ul>
+            
+            <!-- Dev Tools (For Testing) -->
+            <div class="dev-tools">
+                <h4><i class="fa-solid fa-wrench"></i> Demo Tools</h4>
+                <button id="dev-next-day" class="btn outline-btn btn-sm">Simulate Next Day</button>
+                <button id="dev-clear" class="btn outline-btn btn-sm" style="color: #d32f2f; border-color: #d32f2f;">Reset All Data</button>
+            </div>
         </nav>
 
         <!-- Main Content Area -->
@@ -32,21 +43,65 @@
             
             <!-- Dashboard Section -->
             <section id="dashboard-section" class="content-section active glass-panel">
-                <header>
-                    <h2>Welcome to EcoTrack</h2>
-                    <p>Your personalized journey to a greener lifestyle.</p>
-                </header>
-                <div class="dashboard-cards">
-                    <div class="card stat-card">
-                        <h3>Your Carbon Footprint</h3>
-                        <div class="stat-value"><span id="total-footprint">0.0</span> <span class="unit">tons CO₂/yr</span></div>
-                        <p class="stat-desc" id="footprint-status">Take the calculator to see your impact.</p>
+                <header class="dashboard-header">
+                    <div>
+                        <h2>Welcome to EcoTrack</h2>
+                        <p>Your personalized journey to a greener lifestyle.</p>
                     </div>
-                    <div class="card stat-card">
-                        <h3>Actions Completed</h3>
-                        <div class="stat-value"><span id="actions-completed">0</span>/<span id="actions-total">0</span></div>
-                        <div class="progress-bar-container">
-                            <div class="progress-bar" id="action-progress"></div>
+                    <button id="btn-export" class="btn primary-btn"><i class="fa-solid fa-download"></i> Share Report</button>
+                </header>
+                
+                <div id="export-target">
+                    <!-- Stats Grid -->
+                    <div class="dashboard-cards">
+                        <div class="card stat-card">
+                            <h3>Current Footprint</h3>
+                            <div class="stat-value"><span id="total-footprint">0.0</span> <span class="unit">tons CO₂/yr</span></div>
+                            <p class="stat-desc" id="footprint-status">Take the calculator to set your baseline.</p>
+                        </div>
+                        <div class="card stat-card">
+                            <h3>Daily Actions</h3>
+                            <div class="stat-value"><span id="actions-completed">0</span>/<span id="actions-total">0</span></div>
+                            <div class="progress-bar-container">
+                                <div class="progress-bar" id="action-progress"></div>
+                            </div>
+                        </div>
+                        <div class="card stat-card">
+                            <h3>Daily Streak</h3>
+                            <div class="stat-value"><i class="fa-solid fa-fire streak-icon"></i> <span id="streak-count">0</span> <span class="unit">Days</span></div>
+                            <p class="stat-desc">Complete all tasks today to keep it going!</p>
+                        </div>
+                    </div>
+
+                    <!-- Badges and Chart -->
+                    <div class="dashboard-bottom">
+                        <div class="card chart-card">
+                            <h3>Footprint Breakdown</h3>
+                            <div class="chart-container">
+                                <canvas id="footprintChart"></canvas>
+                            </div>
+                        </div>
+                        
+                        <div class="card badges-card">
+                            <h3>Your Achievements</h3>
+                            
+                            <div class="badge-category">
+                                <h4>Streak Badges</h4>
+                                <div class="badge-row">
+                                    <div class="badge streak-badge" id="badge-streak-bronze" title="3 Day Streak"><i class="fa-solid fa-fire"></i><span class="badge-name">Bronze</span></div>
+                                    <div class="badge streak-badge" id="badge-streak-silver" title="7 Day Streak"><i class="fa-solid fa-fire-flame-curved"></i><span class="badge-name">Silver</span></div>
+                                    <div class="badge streak-badge" id="badge-streak-gold" title="30 Day Streak"><i class="fa-solid fa-fire-flame-up"></i><span class="badge-name">Gold</span></div>
+                                </div>
+                            </div>
+                            
+                            <div class="badge-category">
+                                <h4>Footprint Badges</h4>
+                                <div class="badge-row">
+                                    <div class="badge footprint-badge" id="badge-footprint-bronze" title="Below 4 tons/yr"><i class="fa-solid fa-leaf"></i><span class="badge-name">Bronze</span></div>
+                                    <div class="badge footprint-badge" id="badge-footprint-silver" title="Below 2.5 tons/yr"><i class="fa-brands fa-envira"></i><span class="badge-name">Silver</span></div>
+                                    <div class="badge footprint-badge" id="badge-footprint-gold" title="Below 1.5 tons/yr"><i class="fa-solid fa-tree"></i><span class="badge-name">Gold</span></div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -56,16 +111,18 @@
             <section id="calculator-section" class="content-section glass-panel" style="display: none;">
                 <header>
                     <h2>Carbon Calculator</h2>
-                    <p>Tell us about your daily habits to estimate your impact.</p>
+                    <p>Tell us about your daily habits to estimate your baseline footprint.</p>
                 </header>
                 <form id="calculator-form">
                     <div class="form-group">
                         <label for="transport"><i class="fa-solid fa-car"></i> Primary mode of transportation?</label>
                         <select id="transport" required>
                             <option value="" disabled selected>Select an option</option>
-                            <option value="car_gas">Gasoline Car (Daily)</option>
+                            <option value="car_petrol">Petrol Car (Daily)</option>
+                            <option value="car_diesel">Diesel Car (Daily)</option>
                             <option value="car_ev">Electric Car (Daily)</option>
-                            <option value="public">Public Transit</option>
+                            <option value="public_taxi">Public Taxi / Auto-Rickshaw</option>
+                            <option value="public">Public Transport (Bus/Metro)</option>
                             <option value="bike_walk">Biking / Walking</option>
                         </select>
                     </div>
@@ -89,11 +146,11 @@
                             <option value="renewable">100% Renewable</option>
                         </select>
                     </div>
-                    <button type="submit" class="btn primary-btn">Calculate Footprint</button>
+                    <button type="submit" class="btn primary-btn">Calculate Base Footprint</button>
                 </form>
                 <div id="calc-result" class="result-box hidden">
-                    <h3>Estimated Footprint: <span id="result-value"></span> tons CO₂/yr</h3>
-                    <p>The AI Assistant has analyzed your results. Check the Assistant tab for insights!</p>
+                    <h3>Base Footprint: <span id="result-value"></span> tons CO₂/yr</h3>
+                    <p>Go to the Action Tracker to complete daily tasks and lower this number!</p>
                 </div>
             </section>
 
@@ -101,7 +158,7 @@
             <section id="tracker-section" class="content-section glass-panel" style="display: none;">
                 <header>
                     <h2>Action Tracker</h2>
-                    <p>Small actions lead to big changes. Check off your daily sustainable habits.</p>
+                    <p>Complete tasks daily to increase your streak and actively reduce your footprint.</p>
                 </header>
                 <div class="tracker-list" id="tracker-list">
                     <!-- Actions will be injected here by JS -->
